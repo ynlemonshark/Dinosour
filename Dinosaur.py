@@ -74,7 +74,10 @@ score_text_prefix_width = 192
 score_text_prefix_image = pygame.transform.scale(pygame.image.load("resources/score.png"),
                                                  (score_text_prefix_width, score_text_height))
 
-score_number_images = []
+score_number_width = 32
+
+score_number_image = pygame.transform.scale(pygame.image.load("resources/numbers.png"),
+                                                  (score_number_width * 10, score_text_height))
 
 
 class Cactus:
@@ -246,7 +249,12 @@ def main():
             SURFACE.blit(retry_button_image, retry_button_rect.topleft,
                          (0, retry_button_rect.height * retry_button_clicked,
                           retry_button_rect.width, retry_button_rect.height))
+
         SURFACE.blit(score_text_prefix_image, score_text_topleft)
+        for index, number in enumerate(list(str(int(distance / 100)))):
+            SURFACE.blit(score_number_image, (score_text_topleft[0] + score_text_prefix_width + index *
+                                              score_number_width, score_text_topleft[1]),
+                         (int(number) * score_number_width, 0, score_number_width, score_text_height))
 
         DISPLAY.blit(pygame.transform.scale(SURFACE, (Display_width, Display_height)), (0, 0))
 
