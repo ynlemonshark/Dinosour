@@ -79,6 +79,16 @@ score_number_width = 32
 score_number_image = pygame.transform.scale(pygame.image.load("resources/numbers.png"),
                                                   (score_number_width * 10, score_text_height))
 
+start_life = 3
+
+life_rect = Rect(1040, 20, 60, 60)
+life_distance = -70
+life_image = pygame.transform.scale(pygame.image.load("resources/life.png"), life_rect.size)
+
+no_damage_time_delay = 2000
+no_damage_time_flickers = 4
+no_damage_time_flicker_delay = no_damage_time_delay / (no_damage_time_flickers * 2)
+
 
 class Cactus:
     def __init__(self):
@@ -95,16 +105,12 @@ class Cactus:
     def test(self, jumping_height):
         if jumping_height < cactus_types[self.type][1]:
             if dinosaur_position < self.position < dinosaur_width + dinosaur_position:
-                print(1)
                 return True
             if dinosaur_position < self.position + cactus_types[self.type][0] * self.count < dinosaur_width + dinosaur_position:
-                print(2)
                 return True
             if self.position < dinosaur_position < self.position + cactus_types[self.type][0] * self.count:
-                print(3)
                 return True
             if self.position < dinosaur_position + dinosaur_width < self.position + cactus_types[self.type][0] * self.count:
-                print(4)
 
                 return True
 
@@ -117,6 +123,9 @@ def main():
     dinosaur_situation = 2
     dinosaur_situation_delay = 0
 
+
+    Life = start_life
+
     start_button_clicked = 0
     retry_button_clicked = 0
 
@@ -125,6 +134,7 @@ def main():
     jumping = False
     jumping_height = 0
     force = 0
+    no_damage_time = 0
 
     cactus_create_distance = randint(cactus_create_distance_min, cactus_create_distance_max)
 
@@ -155,15 +165,16 @@ def main():
                         dinosaur_situation_delay = 0
 
                         distance = 0
+                        Life = start_life
                         jumping = False
                         jumping_height = 0
                         force = 0
+                        no_damage_time = 0
                         cactus_create_distance = randint(cactus_create_distance_min, cactus_create_distance_max)
                         boosting = False
                         CACTI = []
 
                     retry_button_clicked = 0
-
 
             elif pygame_event.type == MOUSEBUTTONDOWN:
                 event_pos = (pygame_event.pos[0] / display_ratio_x, pygame_event.pos[1] / display_ratio_y)
@@ -179,9 +190,10 @@ def main():
             elif pygame_event.type == KEYDOWN:
                 if FLAG == 1:
                     if pygame_event.key == pygame.K_SPACE:
-                        jumping = True
-                        force = jump_power
-                        boosting = True
+                        if not jumping:
+                            jumping = True
+                            force = jump_power
+                            boosting = True
 
             elif pygame_event.type == KEYUP:
                 if pygame_event.key == pygame.K_SPACE:
@@ -222,14 +234,27 @@ def main():
                     dinosaur_situation_delay %= step_delay
 
             for index in range(len(CACTI)):
-                if CACTI[index].test(jumping_height):
-                    FLAG = 2
+                if not no_damage_time:
+                    if CACTI[index].test(jumping_height):
+                        Life -= 1
+                        no_damage_time = no_damage_time_delay
+
+            no_damage_time = max(0, no_damage_time - 1000 / FPS)
+
+            if Life <= 0:
+                Life = 0
+                FLAG = 2
 
         SURFACE.fill((255, 255, 255))
         GAME_DISPLAY.fill((255, 255, 255))
 
         for index in range(len(CACTI)):
             CACTI[index].draw()
+
+        if no_damage_time and (no_damage_time // no_damage_time_flicker_delay) % 2 == 0:
+            dinosaur_image.set_alpha(127)
+        else:
+            dinosaur_image.set_alpha(255)
 
         GAME_DISPLAY.blit(dinosaur_image, (dinosaur_position, ground - dinosaur_height - jumping_height),
                           (0, dinosaur_situation * dinosaur_height, dinosaur_width, dinosaur_height))
@@ -243,6 +268,10 @@ def main():
         if FLAG == 0:
             SURFACE.blit(start_button_image, start_button_rect.topleft,
                          ((0, start_button_rect.height * start_button_clicked), start_button_rect.size))
+
+        if FLAG == 1:
+            for repeat in range(Life):
+                SURFACE.blit(life_image, (life_rect.left + life_distance * repeat, life_rect.top))
 
         if FLAG == 2:
             SURFACE.blit(gameover_message_image, gameover_message_rect.topleft)
